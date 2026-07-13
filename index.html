@@ -308,24 +308,36 @@
     }
 
     // ---------- главное меню ----------
+    // Telegram даёт этому Mini App подписанные данные о пользователе
+    // (initData) только когда он открыт через inline-кнопку — при запуске
+    // через reply-кнопку (нужна для sendData() при записи) initData всегда
+    // пустая. Поэтому набор пунктов меню зависит от того, как открыли:
+    // с initData — «Мои записи»/«Отзывы» (им нужно подтвердить пользователя),
+    // без initData — только «Записаться» (ей нужен sendData(), который
+    // работает только при запуске через reply-кнопку).
     function renderMenu() {
+      var trusted = !!(tg && tg.initData);
       var root = el("div");
       root.appendChild(el("h1", null, "💈 Barber Studio"));
-      root.appendChild(card({
-        title: "📅 Записаться",
-        subtitle: "Услуга, салон, мастер, дата и время",
-        onClick: function () { goToStep("service"); }
-      }));
-      root.appendChild(card({
-        title: "🗂 Мои записи",
-        subtitle: "Посмотреть или отменить запись",
-        onClick: function () { goToStep("myBookings"); }
-      }));
-      root.appendChild(card({
-        title: "⭐ Оставить отзыв",
-        subtitle: "Оценить мастера",
-        onClick: function () { goToStep("reviewMaster"); }
-      }));
+      if (!trusted) {
+        root.appendChild(card({
+          title: "📅 Записаться",
+          subtitle: "Услуга, салон, мастер, дата и время",
+          onClick: function () { goToStep("service"); }
+        }));
+        root.appendChild(el("p", "hint", "Чтобы посмотреть свои записи или оставить отзыв — открой кнопку «🗂 Мои записи и отзывы» в чате с ботом."));
+      } else {
+        root.appendChild(card({
+          title: "🗂 Мои записи",
+          subtitle: "Посмотреть или отменить запись",
+          onClick: function () { goToStep("myBookings"); }
+        }));
+        root.appendChild(card({
+          title: "⭐ Оставить отзыв",
+          subtitle: "Оценить мастера",
+          onClick: function () { goToStep("reviewMaster"); }
+        }));
+      }
       mount(root);
     }
 
