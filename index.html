@@ -6,6 +6,13 @@
 <title>Запись — Barber Studio</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
+  :root {
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --radius-sm: 10px;
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.07);
+    --transition-fast: 0.14s ease;
+  }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -15,11 +22,16 @@
     background: var(--tg-theme-bg-color, #ffffff);
     color: var(--tg-theme-text-color, #111111);
   }
-  h1 { font-size: 19px; margin: 4px 0 12px; }
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; margin: 4px 0 14px; }
   .summary-line {
+    display: inline-block;
     font-size: 13px;
+    font-weight: 500;
     color: var(--tg-theme-hint-color, #999999);
-    margin-bottom: 14px;
+    background: var(--tg-theme-secondary-bg-color, #f3f3f5);
+    padding: 6px 12px;
+    border-radius: 999px;
+    margin-bottom: 16px;
   }
   .hint { color: var(--tg-theme-hint-color, #999999); font-size: 14px; }
   .error-text { color: #e53e3e; font-size: 14px; margin-bottom: 12px; }
@@ -32,6 +44,27 @@
     text-align: center;
     gap: 12px;
   }
+
+  /* ---------- прогресс записи ---------- */
+  .progress-wrap { margin-bottom: 18px; }
+  .progress-track {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--tg-theme-secondary-bg-color, #f3f3f5);
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--tg-theme-button-color, #2ea6ff);
+    transition: width 0.25s ease;
+  }
+  .progress-label {
+    font-size: 12px;
+    color: var(--tg-theme-hint-color, #999999);
+    margin-top: 6px;
+  }
+
   .card {
     display: flex;
     align-items: center;
@@ -39,21 +72,24 @@
     width: 100%;
     padding: 12px;
     margin-bottom: 10px;
-    border-radius: 14px;
+    border-radius: var(--radius-lg);
     background: var(--tg-theme-secondary-bg-color, #f3f3f5);
+    box-shadow: var(--shadow-card);
     cursor: pointer;
     border: none;
     text-align: left;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
   }
-  .card:active { opacity: 0.8; }
+  .card:active { transform: scale(0.97); box-shadow: none; }
   .card__photo {
     width: 56px;
     height: 56px;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     object-fit: cover;
     flex-shrink: 0;
     background: #dddddd;
   }
+  .card__photo--round { border-radius: 50%; }
   .card__body { flex: 1; min-width: 0; }
   .card__title { font-weight: 600; font-size: 15px; }
   .card__subtitle {
@@ -70,37 +106,44 @@
   .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
     padding: 10px 16px;
-    border-radius: 10px;
+    border-radius: 999px;
     border: none;
     background: var(--tg-theme-secondary-bg-color, #f3f3f5);
     color: var(--tg-theme-text-color, #111111);
     font-size: 15px;
     cursor: pointer;
+    transition: transform var(--transition-fast);
   }
-  .chip:active { opacity: 0.8; }
+  .chip:active { transform: scale(0.95); }
   .text-input {
     width: 100%;
     padding: 12px 14px;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     border: 1px solid var(--tg-theme-hint-color, #cccccc);
     background: var(--tg-theme-bg-color, #ffffff);
     color: var(--tg-theme-text-color, #111111);
     font-size: 16px;
     margin-bottom: 12px;
+    transition: border-color var(--transition-fast);
   }
+  .text-input:focus { outline: none; border-color: var(--tg-theme-button-color, #2ea6ff); }
   .primary-btn, .secondary-btn {
     display: block;
     width: 100%;
-    padding: 12px;
-    border-radius: 10px;
+    padding: 13px;
+    border-radius: var(--radius-sm);
     border: none;
     font-size: 15px;
+    font-weight: 600;
     cursor: pointer;
     margin-top: 8px;
+    transition: transform var(--transition-fast), opacity var(--transition-fast);
   }
+  .primary-btn:active, .secondary-btn:active { transform: scale(0.98); opacity: 0.85; }
   .primary-btn {
     background: var(--tg-theme-button-color, #2ea6ff);
     color: var(--tg-theme-button-text-color, #ffffff);
+    box-shadow: 0 4px 12px rgba(46, 166, 255, 0.25);
   }
   .secondary-btn {
     background: var(--tg-theme-secondary-bg-color, #f3f3f5);
@@ -108,19 +151,26 @@
   }
   .summary-box {
     background: var(--tg-theme-secondary-bg-color, #f3f3f5);
-    border-radius: 14px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
     padding: 4px 14px;
     margin-bottom: 16px;
   }
-  .summary-row { padding: 8px 0; border-bottom: 1px solid rgba(127, 127, 127, 0.15); }
+  .summary-row { padding: 10px 0; border-bottom: 1px solid rgba(127, 127, 127, 0.15); }
   .summary-row:last-child { border-bottom: none; }
   .summary-row__label {
     font-size: 12px;
     color: var(--tg-theme-hint-color, #888888);
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
   }
   .summary-row__value { font-size: 15px; white-space: pre-line; margin-top: 2px; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in { animation: fadeIn 0.18s ease-out; }
 </style>
 </head>
 <body>
@@ -154,13 +204,46 @@
     function mount(node) {
       var app = document.getElementById("app");
       app.innerHTML = "";
+      node.classList.add("fade-in");
       app.appendChild(node);
+    }
+
+    // ---------- прогресс записи ----------
+    // Экраны вне воронки (меню, "мои записи", отзывы) в этот список не
+    // входят — stepProgress() для них вернёт null, и полоса просто не
+    // покажется.
+    var STEP_ORDER = ["service", "salon", "master", "date", "time", "name", "phone", "confirm"];
+
+    function stepProgress(step) {
+      var idx = STEP_ORDER.indexOf(step);
+      if (idx === -1) return null;
+      return { index: idx + 1, total: STEP_ORDER.length };
+    }
+
+    function renderProgressBar(step) {
+      var p = stepProgress(step);
+      if (!p) return null;
+      var wrap = el("div", "progress-wrap");
+      var track = el("div", "progress-track");
+      var fill = el("div", "progress-fill");
+      fill.style.width = Math.round((p.index / p.total) * 100) + "%";
+      track.appendChild(fill);
+      wrap.appendChild(track);
+      wrap.appendChild(el("div", "progress-label", "Шаг " + p.index + " из " + p.total));
+      return wrap;
+    }
+
+    function stepRoot(step) {
+      var root = el("div");
+      var bar = renderProgressBar(step);
+      if (bar) root.appendChild(bar);
+      return root;
     }
 
     function card(opts) {
       var c = el("button", "card");
       if (opts.photo) {
-        var img = el("img", "card__photo");
+        var img = el("img", "card__photo" + (opts.round ? " card__photo--round" : ""));
         img.src = opts.photo;
         img.alt = "";
         img.onerror = function () { img.style.display = "none"; };
@@ -192,18 +275,22 @@
       return row;
     }
 
-    function renderLoading(text) {
-      var root = el("div", "center");
-      root.appendChild(el("p", "hint", text || "Загрузка…"));
+    function renderLoading(text, step) {
+      var root = stepRoot(step);
+      var center = el("div", "center");
+      center.appendChild(el("p", "hint", text || "Загрузка…"));
+      root.appendChild(center);
       mount(root);
     }
 
-    function renderError(text, retryFn) {
-      var root = el("div", "center");
-      root.appendChild(el("p", "error-text", text));
+    function renderError(text, retryFn, step) {
+      var root = stepRoot(step);
+      var center = el("div", "center");
+      center.appendChild(el("p", "error-text", text));
       var btn = el("button", "secondary-btn", "Повторить");
       btn.addEventListener("click", retryFn);
-      root.appendChild(btn);
+      center.appendChild(btn);
+      root.appendChild(center);
       mount(root);
     }
 
@@ -345,12 +432,12 @@
 
     // ---------- шаг 1: услуга ----------
     async function renderServices() {
-      renderLoading("Загружаю услуги…");
+      renderLoading("Загружаю услуги…", "service");
       var services;
       try { services = await apiGet("/api/public/services"); }
-      catch (e) { renderError("Не удалось загрузить услуги. Проверь, что API запущен.", renderServices); return; }
+      catch (e) { renderError("Не удалось загрузить услуги. Проверь, что API запущен.", renderServices, "service"); return; }
 
-      var root = el("div");
+      var root = stepRoot("service");
       root.appendChild(el("h1", null, "💈 Выберите услугу"));
       services.forEach(function (s) {
         root.appendChild(card({
@@ -366,12 +453,12 @@
 
     // ---------- шаг 2: салон ----------
     async function renderSalons() {
-      renderLoading("Загружаю салоны…");
+      renderLoading("Загружаю салоны…", "salon");
       var salons;
       try { salons = await apiGet("/api/public/salons"); }
-      catch (e) { renderError("Не удалось загрузить салоны.", renderSalons); return; }
+      catch (e) { renderError("Не удалось загрузить салоны.", renderSalons, "salon"); return; }
 
-      var root = el("div");
+      var root = stepRoot("salon");
       root.appendChild(el("h1", null, "📍 Выберите салон"));
       root.appendChild(summaryLine());
       salons.forEach(function (s) {
@@ -386,19 +473,20 @@
 
     // ---------- шаг 3: мастер ----------
     async function renderMasters() {
-      renderLoading("Загружаю мастеров…");
+      renderLoading("Загружаю мастеров…", "master");
       var masters;
       try {
         masters = await apiGet("/api/public/masters?salon_key=" + encodeURIComponent(state.salon.key));
-      } catch (e) { renderError("Не удалось загрузить мастеров.", renderMasters); return; }
+      } catch (e) { renderError("Не удалось загрузить мастеров.", renderMasters, "master"); return; }
 
-      var root = el("div");
+      var root = stepRoot("master");
       root.appendChild(el("h1", null, "✂️ Выберите мастера"));
       root.appendChild(summaryLine());
       masters.forEach(function (m) {
         var ratingText = m.review_count ? ("⭐ " + m.rating + " (" + m.review_count + ")") : "Пока нет отзывов";
         root.appendChild(card({
           photo: "assets/masters/" + m.key + ".jpg",
+          round: true,
           title: m.name,
           subtitle: m.spec + "\n" + ratingText,
           onClick: function () { state.master = m; goToStep("date"); }
@@ -417,12 +505,12 @@
 
     // ---------- шаг 4: дата ----------
     async function renderDates() {
-      renderLoading("Загружаю даты…");
+      renderLoading("Загружаю даты…", "date");
       var dates;
       try { dates = await apiGet("/api/public/dates"); }
-      catch (e) { renderError("Не удалось загрузить даты.", renderDates); return; }
+      catch (e) { renderError("Не удалось загрузить даты.", renderDates, "date"); return; }
 
-      var root = el("div");
+      var root = stepRoot("date");
       root.appendChild(el("h1", null, "📅 Выберите дату"));
       root.appendChild(summaryLine());
       var grid = el("div", "chip-grid");
@@ -437,16 +525,16 @@
 
     // ---------- шаг 5: время ----------
     async function renderTimes() {
-      renderLoading("Проверяю свободное время…");
+      renderLoading("Проверяю свободное время…", "time");
       var data;
       try {
         var q = "master_key=" + encodeURIComponent(state.master.key) +
           "&salon_key=" + encodeURIComponent(state.salon.key) +
           "&date=" + encodeURIComponent(state.date);
         data = await apiGet("/api/public/slots?" + q);
-      } catch (e) { renderError("Не удалось загрузить время.", renderTimes); return; }
+      } catch (e) { renderError("Не удалось загрузить время.", renderTimes, "time"); return; }
 
-      var root = el("div");
+      var root = stepRoot("time");
       root.appendChild(el("h1", null, "⏰ Выберите время"));
       root.appendChild(summaryLine());
 
@@ -466,7 +554,7 @@
 
     // ---------- шаг 6: имя ----------
     function renderName() {
-      var root = el("div");
+      var root = stepRoot("name");
       root.appendChild(el("h1", null, "👤 Как вас зовут?"));
       root.appendChild(summaryLine());
 
@@ -496,7 +584,7 @@
 
     // ---------- шаг 7: телефон ----------
     function renderPhone() {
-      var root = el("div");
+      var root = stepRoot("phone");
       root.appendChild(el("h1", null, "📱 Номер телефона"));
       root.appendChild(summaryLine());
 
@@ -536,7 +624,7 @@
 
     // ---------- шаг 8: подтверждение ----------
     function renderConfirm() {
-      var root = el("div");
+      var root = stepRoot("confirm");
       root.appendChild(el("h1", null, "✅ Проверьте запись"));
 
       var summary = el("div", "summary-box");
@@ -566,7 +654,7 @@
         phone: state.phone
       };
       hideMainButton();
-      renderLoading("Записываю…");
+      renderLoading("Записываю…", "confirm");
       try {
         var result = await apiPost("/api/public/book", payload);
         state.bookingResult = result;
@@ -648,6 +736,7 @@
       masters.forEach(function (m) {
         root.appendChild(card({
           photo: "assets/masters/" + m.key + ".jpg",
+          round: true,
           title: m.name,
           subtitle: m.salon_name,
           onClick: function () { state.reviewMaster = m; goToStep("reviewRating"); }
