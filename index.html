@@ -207,10 +207,26 @@
       mount(root);
     }
 
-    async function apiGet(path) {
-      var res = await fetch(API_URL + path);
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return res.json();
+    // Бесплатные туннели (devtunnels/ngrok/localtunnel) иногда подвисают на
+    // отдельных запросах на несколько секунд — вместо того чтобы сразу
+    // показывать ошибку, тихо пробуем ещё пару раз с коротким таймаутом.
+    async function apiGet(path, attempt) {
+      attempt = attempt || 1;
+      var controller = new AbortController();
+      var timeoutId = setTimeout(function () { controller.abort(); }, 6000);
+      try {
+        var res = await fetch(API_URL + path, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return await res.json();
+      } catch (e) {
+        clearTimeout(timeoutId);
+        if (attempt < 3) {
+          await new Promise(function (r) { setTimeout(r, 500); });
+          return apiGet(path, attempt + 1);
+        }
+        throw e;
+      }
     }
 
     // ---------- Telegram MainButton/BackButton ----------
