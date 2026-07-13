@@ -308,36 +308,24 @@
     }
 
     // ---------- главное меню ----------
-    // Telegram даёт этому Mini App подписанные данные о пользователе
-    // (initData) только когда он открыт через inline-кнопку — при запуске
-    // через reply-кнопку (нужна для sendData() при записи) initData всегда
-    // пустая. Поэтому набор пунктов меню зависит от того, как открыли:
-    // с initData — «Мои записи»/«Отзывы» (им нужно подтвердить пользователя),
-    // без initData — только «Записаться» (ей нужен sendData(), который
-    // работает только при запуске через reply-кнопку).
     function renderMenu() {
-      var trusted = !!(tg && tg.initData);
       var root = el("div");
       root.appendChild(el("h1", null, "💈 Barber Studio"));
-      if (!trusted) {
-        root.appendChild(card({
-          title: "📅 Записаться",
-          subtitle: "Услуга, салон, мастер, дата и время",
-          onClick: function () { goToStep("service"); }
-        }));
-        root.appendChild(el("p", "hint", "Чтобы посмотреть свои записи или оставить отзыв — открой кнопку «🗂 Мои записи и отзывы» в чате с ботом."));
-      } else {
-        root.appendChild(card({
-          title: "🗂 Мои записи",
-          subtitle: "Посмотреть или отменить запись",
-          onClick: function () { goToStep("myBookings"); }
-        }));
-        root.appendChild(card({
-          title: "⭐ Оставить отзыв",
-          subtitle: "Оценить мастера",
-          onClick: function () { goToStep("reviewMaster"); }
-        }));
-      }
+      root.appendChild(card({
+        title: "📅 Записаться",
+        subtitle: "Услуга, салон, мастер, дата и время",
+        onClick: function () { goToStep("service"); }
+      }));
+      root.appendChild(card({
+        title: "🗂 Мои записи",
+        subtitle: "Посмотреть или отменить запись",
+        onClick: function () { goToStep("myBookings"); }
+      }));
+      root.appendChild(card({
+        title: "⭐ Оставить отзыв",
+        subtitle: "Оценить мастера",
+        onClick: function () { goToStep("reviewMaster"); }
+      }));
       mount(root);
     }
 
@@ -546,14 +534,15 @@
       summary.appendChild(summaryRow("Телефон", state.phone));
       root.appendChild(summary);
 
-      root.appendChild(el("p", "hint", "Нажми «Записаться» — бот подтвердит запись в чате."));
+      root.appendChild(el("p", "hint", "Нажми «Записаться» — запись сразу попадёт в CRM, и придёт подтверждение в чат."));
 
       mountPrimaryAction(root, "✅ Записаться", submitBooking);
       mount(root);
     }
 
-    function submitBooking() {
+    async function submitBooking() {
       var payload = {
+        init_data: getInitData(),
         service_key: state.service.key,
         salon_key: state.salon.key,
         master_key: state.master.key,
@@ -562,11 +551,29 @@
         name: state.name,
         phone: state.phone
       };
-      if (tg) {
-        tg.sendData(JSON.stringify(payload));
-      } else {
-        alert("Открыто вне Telegram — sendData недоступен.\n" + JSON.stringify(payload, null, 2));
+      hideMainButton();
+      renderLoading("Записываю…");
+      try {
+        var result = await apiPost("/api/public/book", payload);
+        state.bookingResult = result;
+        goToStep("done");
+      } catch (e) {
+        renderError(e.message || "Не удалось записаться. Попробуй ещё раз.", function () { goToStep("confirm"); });
       }
+    }
+
+    function renderDone() {
+      var root = el("div", "center");
+      root.appendChild(el("p", null, "✅"));
+      root.appendChild(el("h1", null, "Готово!"));
+      var r = state.bookingResult || {};
+      root.appendChild(el("p", "hint",
+        "Вы записаны: " + (r.service_name || state.service.name) + " к " + (r.master_name || state.master.name) +
+        "\n" + state.date + " в " + state.time));
+      var btn = el("button", "secondary-btn", "В меню");
+      btn.addEventListener("click", function () { resetToStep("menu"); });
+      root.appendChild(btn);
+      mount(root);
     }
 
     function renderTelegramOnly() {
@@ -701,6 +708,7 @@
       name: renderName,
       phone: renderPhone,
       confirm: renderConfirm,
+      done: renderDone,
       myBookings: renderMyBookings,
       reviewMaster: renderReviewMaster,
       reviewRating: renderReviewRating,
@@ -712,17 +720,6 @@
       tg.ready();
       tg.expand();
       tg.BackButton.onClick(goBack);
-      // ВРЕМЕННО: шлём диагностику в API, чтобы понять, почему initData
-      // пустая у реальных пользователей. Не блокирует интерфейс.
-      try {
-        var unsafeUser = (tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
-        var qs = "platform=" + encodeURIComponent(tg.platform || "") +
-          "&version=" + encodeURIComponent(tg.version || "") +
-          "&init_data_len=" + (tg.initData ? tg.initData.length : 0) +
-          "&has_unsafe_user=" + (unsafeUser ? "true" : "false") +
-          "&unsafe_user_id=" + encodeURIComponent(unsafeUser ? String(unsafeUser.id) : "");
-        fetch(API_URL + "/api/public/_debug_webapp?" + qs).catch(function () {});
-      } catch (e) {}
     }
     render();
   </script>
