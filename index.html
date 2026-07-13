@@ -135,7 +135,11 @@
 
     // ---------- состояние воронки ----------
     var state = { service: null, salon: null, master: null, date: null, time: null, name: "", phone: "" };
-    var history = [];
+    // Не называем "history" — это зарезервированное имя window.history,
+    // присвоение молча не срабатывает (в нестрогом режиме), а
+    // history.push(...) падает с TypeError, потому что у нативного
+    // History нет метода push — из-за этого не работали клики по карточкам.
+    var stepHistory = [];
     var currentStep = "service";
     var mainButtonHandler = null;
 
@@ -239,19 +243,19 @@
 
     function updateBackButton() {
       if (!tg) return;
-      if (history.length > 0) tg.BackButton.show(); else tg.BackButton.hide();
+      if (stepHistory.length > 0) tg.BackButton.show(); else tg.BackButton.hide();
     }
 
     // ---------- навигация по шагам ----------
     function goToStep(step) {
-      history.push(currentStep);
+      stepHistory.push(currentStep);
       currentStep = step;
       render();
     }
 
     function goBack() {
-      if (!history.length) return;
-      currentStep = history.pop();
+      if (!stepHistory.length) return;
+      currentStep = stepHistory.pop();
       render();
     }
 
