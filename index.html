@@ -140,7 +140,7 @@
     // history.push(...) падает с TypeError, потому что у нативного
     // History нет метода push — из-за этого не работали клики по карточкам.
     var stepHistory = [];
-    var currentStep = "service";
+    var currentStep = "menu";
     var mainButtonHandler = null;
 
     // ---------- мелкие DOM-хелперы ----------
@@ -229,6 +229,26 @@
       }
     }
 
+    // POST не повторяем автоматически — в отличие от чтения, отмена
+    // записи/отправка отзыва не идемпотентны, повтор при флаки-сети мог бы
+    // случайно продублировать действие.
+    async function apiPost(path, body) {
+      var res = await fetch(API_URL + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        var errBody = await res.json().catch(function () { return {}; });
+        throw new Error(errBody.detail || ("HTTP " + res.status));
+      }
+      return res.json();
+    }
+
+    function getInitData() {
+      return tg ? tg.initData : "";
+    }
+
     // ---------- Telegram MainButton/BackButton ----------
     function setMainButton(text, handler) {
       if (!tg) return;
@@ -275,10 +295,38 @@
       render();
     }
 
+    function resetToStep(step) {
+      stepHistory = [];
+      currentStep = step;
+      render();
+    }
+
     function render() {
       updateBackButton();
       hideMainButton();
       STEP_RENDERERS[currentStep]();
+    }
+
+    // ---------- главное меню ----------
+    function renderMenu() {
+      var root = el("div");
+      root.appendChild(el("h1", null, "💈 Barber Studio"));
+      root.appendChild(card({
+        title: "📅 Записаться",
+        subtitle: "Услуга, салон, мастер, дата и время",
+        onClick: function () { goToStep("service"); }
+      }));
+      root.appendChild(card({
+        title: "🗂 Мои записи",
+        subtitle: "Посмотреть или отменить запись",
+        onClick: function () { goToStep("myBookings"); }
+      }));
+      root.appendChild(card({
+        title: "⭐ Оставить отзыв",
+        subtitle: "Оценить мастера",
+        onClick: function () { goToStep("reviewMaster"); }
+      }));
+      mount(root);
     }
 
     // ---------- шаг 1: услуга ----------
@@ -509,7 +557,130 @@
       }
     }
 
+    function renderTelegramOnly() {
+      var root = el("div", "center");
+      root.appendChild(el("p", "hint", "Доступно только внутри Telegram."));
+      mount(root);
+    }
+
+    // ---------- мои записи ----------
+    async function renderMyBookings() {
+      if (!tg) { renderTelegramOnly(); return; }
+
+      renderLoading("Загружаю твои записи…");
+      var bookings;
+      try {
+        bookings = await apiGet("/api/public/my-bookings?init_data=" + encodeURIComponent(getInitData()));
+      } catch (e) { renderError("Не удалось загрузить записи.", renderMyBookings); return; }
+
+      var root = el("div");
+      root.appendChild(el("h1", null, "🗂 Мои записи"));
+
+      if (!bookings.length) {
+        root.appendChild(el("p", "hint", "Активных записей пока нет."));
+      } else {
+        bookings.forEach(function (b) {
+          var box = el("div", "summary-box");
+          box.appendChild(summaryRow(b.service, b.master + "\n" + b.salon));
+          box.appendChild(summaryRow("Когда", b.date + " в " + b.time));
+          var cancelBtn = el("button", "secondary-btn", "Отменить запись");
+          cancelBtn.addEventListener("click", function () { cancelMyBooking(b.id); });
+          box.appendChild(cancelBtn);
+          root.appendChild(box);
+        });
+      }
+      mount(root);
+    }
+
+    async function cancelMyBooking(id) {
+      try {
+        await apiPost("/api/public/my-bookings/cancel", { init_data: getInitData(), booking_id: id });
+        renderMyBookings();
+      } catch (e) {
+        alert(e.message || "Не удалось отменить запись");
+      }
+    }
+
+    // ---------- отзыв: выбор мастера ----------
+    async function renderReviewMaster() {
+      if (!tg) { renderTelegramOnly(); return; }
+
+      renderLoading("Загружаю мастеров…");
+      var masters;
+      try { masters = await apiGet("/api/public/masters/all"); }
+      catch (e) { renderError("Не удалось загрузить мастеров.", renderReviewMaster); return; }
+
+      var root = el("div");
+      root.appendChild(el("h1", null, "⭐ Кого оцениваем?"));
+      masters.forEach(function (m) {
+        root.appendChild(card({
+          photo: "assets/masters/" + m.key + ".jpg",
+          title: m.name,
+          subtitle: m.salon_name,
+          onClick: function () { state.reviewMaster = m; goToStep("reviewRating"); }
+        }));
+      });
+      mount(root);
+    }
+
+    // ---------- отзыв: оценка ----------
+    function renderReviewRating() {
+      var root = el("div");
+      root.appendChild(el("h1", null, "Оцените мастера " + state.reviewMaster.name));
+      var grid = el("div", "chip-grid");
+      [1, 2, 3, 4, 5].forEach(function (n) {
+        var chip = el("button", "chip", "⭐".repeat(n));
+        chip.addEventListener("click", function () {
+          state.reviewRating = n;
+          goToStep("reviewComment");
+        });
+        grid.appendChild(chip);
+      });
+      root.appendChild(grid);
+      mount(root);
+    }
+
+    // ---------- отзыв: комментарий ----------
+    function renderReviewComment() {
+      var root = el("div");
+      root.appendChild(el("h1", null, "Комментарий (необязательно)"));
+
+      var input = el("textarea", "text-input");
+      input.rows = 3;
+      input.placeholder = "Например: всё понравилось, мастер супер!";
+      root.appendChild(input);
+
+      mountPrimaryAction(root, "Отправить отзыв", function () {
+        submitReview(input.value.trim() || null);
+      });
+      mount(root);
+    }
+
+    async function submitReview(comment) {
+      try {
+        await apiPost("/api/public/reviews", {
+          init_data: getInitData(),
+          master_key: state.reviewMaster.key,
+          rating: state.reviewRating,
+          comment: comment
+        });
+        resetToStep("reviewDone");
+      } catch (e) {
+        alert(e.message || "Не удалось отправить отзыв");
+      }
+    }
+
+    function renderReviewDone() {
+      var root = el("div", "center");
+      root.appendChild(el("p", null, "Спасибо за отзыв! 🙌"));
+      var btn = el("button", "primary-btn", "В меню");
+      btn.addEventListener("click", function () { resetToStep("menu"); });
+      root.appendChild(btn);
+      mount(root);
+    }
+
     var STEP_RENDERERS = {
+      menu: renderMenu,
       service: renderServices,
       salon: renderSalons,
       master: renderMasters,
@@ -517,7 +688,12 @@
       time: renderTimes,
       name: renderName,
       phone: renderPhone,
-      confirm: renderConfirm
+      confirm: renderConfirm,
+      myBookings: renderMyBookings,
+      reviewMaster: renderReviewMaster,
+      reviewRating: renderReviewRating,
+      reviewComment: renderReviewComment,
+      reviewDone: renderReviewDone
     };
 
     if (tg) {
