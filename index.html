@@ -88,6 +88,11 @@
     border: none;
     border-left: 3px solid transparent;
     text-align: left;
+    /* <button> в браузерах не наследует цвет текста от body сам по себе —
+       без явного color тут заголовки карточек (услуга/мастер/салон)
+       остаются системным тёмным цветом и пропадают на тёмной теме
+       Telegram, где фон карточки сам становится тёмным. */
+    color: var(--tg-theme-text-color, #241a0f);
     transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
   }
   .card:hover { border-left-color: var(--brand-gold); }
@@ -102,7 +107,7 @@
   }
   .card__photo--round { border-radius: 50%; }
   .card__body { flex: 1; min-width: 0; }
-  .card__title { font-weight: 600; font-size: 15px; }
+  .card__title { font-weight: 700; font-size: 15px; }
   .card__subtitle {
     font-size: 13px;
     color: var(--tg-theme-hint-color, #8a7a5c);
