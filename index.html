@@ -231,13 +231,27 @@
 
     // POST не повторяем автоматически — в отличие от чтения, отмена
     // записи/отправка отзыва не идемпотентны, повтор при флаки-сети мог бы
-    // случайно продублировать действие.
+    // случайно продублировать действие. Но таймаут всё равно нужен: без
+    // него fetch() на подвисшем туннеле не завершается вообще никогда, и
+    // экран("Записываю…") зависает навсегда без единой ошибки — приходится
+    // перезапускать Mini App руками. С таймаутом хотя бы будет кнопка
+    // "Повторить" вместо мёртвого экрана.
     async function apiPost(path, body) {
-      var res = await fetch(API_URL + path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
+      var controller = new AbortController();
+      var timeoutId = setTimeout(function () { controller.abort(); }, 15000);
+      var res;
+      try {
+        res = await fetch(API_URL + path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
+      } catch (e) {
+        throw new Error(e.name === "AbortError" ? "Сервер не отвечает — проверь соединение и попробуй ещё раз." : e.message);
+      } finally {
+        clearTimeout(timeoutId);
+      }
       if (!res.ok) {
         var errBody = await res.json().catch(function () { return {}; });
         throw new Error(errBody.detail || ("HTTP " + res.status));
