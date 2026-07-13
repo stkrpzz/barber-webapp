@@ -700,6 +700,17 @@
       tg.ready();
       tg.expand();
       tg.BackButton.onClick(goBack);
+      // ВРЕМЕННО: шлём диагностику в API, чтобы понять, почему initData
+      // пустая у реальных пользователей. Не блокирует интерфейс.
+      try {
+        var unsafeUser = (tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
+        var qs = "platform=" + encodeURIComponent(tg.platform || "") +
+          "&version=" + encodeURIComponent(tg.version || "") +
+          "&init_data_len=" + (tg.initData ? tg.initData.length : 0) +
+          "&has_unsafe_user=" + (unsafeUser ? "true" : "false") +
+          "&unsafe_user_id=" + encodeURIComponent(unsafeUser ? String(unsafeUser.id) : "");
+        fetch(API_URL + "/api/public/_debug_webapp?" + qs).catch(function () {});
+      } catch (e) {}
     }
     render();
   </script>
