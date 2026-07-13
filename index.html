@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Запись — Barber Studio</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -12,6 +15,12 @@
     --radius-sm: 10px;
     --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.07);
     --transition-fast: 0.14s ease;
+    /* Фирменные цвета барбершопа — золото на тёмном янтаре, не зависят от
+       акцентного цвета темы Telegram (у него он у всех разный), только
+       фон/текст берём из --tg-theme-*, чтобы соблюдался светлый/тёмный режим. */
+    --brand-gold: #b8860b;
+    --brand-gold-bright: #d4a72c;
+    --brand-ink: #241a0f;
   }
   * { box-sizing: border-box; }
   body {
@@ -19,21 +28,21 @@
     padding: 16px;
     padding-bottom: 90px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--tg-theme-bg-color, #ffffff);
-    color: var(--tg-theme-text-color, #111111);
+    background: var(--tg-theme-bg-color, #faf6ee);
+    color: var(--tg-theme-text-color, #241a0f);
   }
   h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; margin: 4px 0 14px; }
   .summary-line {
     display: inline-block;
     font-size: 13px;
     font-weight: 500;
-    color: var(--tg-theme-hint-color, #999999);
-    background: var(--tg-theme-secondary-bg-color, #f3f3f5);
+    color: var(--brand-gold);
+    background: var(--tg-theme-secondary-bg-color, #f1e6cf);
     padding: 6px 12px;
     border-radius: 999px;
     margin-bottom: 16px;
   }
-  .hint { color: var(--tg-theme-hint-color, #999999); font-size: 14px; }
+  .hint { color: var(--tg-theme-hint-color, #8a7a5c); font-size: 14px; }
   .error-text { color: #e53e3e; font-size: 14px; margin-bottom: 12px; }
   .center {
     display: flex;
@@ -50,18 +59,18 @@
   .progress-track {
     height: 6px;
     border-radius: 999px;
-    background: var(--tg-theme-secondary-bg-color, #f3f3f5);
+    background: var(--tg-theme-secondary-bg-color, #f1e6cf);
     overflow: hidden;
   }
   .progress-fill {
     height: 100%;
     border-radius: 999px;
-    background: var(--tg-theme-button-color, #2ea6ff);
+    background: linear-gradient(90deg, var(--brand-gold), var(--brand-gold-bright));
     transition: width 0.25s ease;
   }
   .progress-label {
     font-size: 12px;
-    color: var(--tg-theme-hint-color, #999999);
+    color: var(--tg-theme-hint-color, #8a7a5c);
     margin-top: 6px;
   }
 
@@ -73,13 +82,15 @@
     padding: 12px;
     margin-bottom: 10px;
     border-radius: var(--radius-lg);
-    background: var(--tg-theme-secondary-bg-color, #f3f3f5);
+    background: var(--tg-theme-secondary-bg-color, #f1e6cf);
     box-shadow: var(--shadow-card);
     cursor: pointer;
     border: none;
+    border-left: 3px solid transparent;
     text-align: left;
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
   }
+  .card:hover { border-left-color: var(--brand-gold); }
   .card:active { transform: scale(0.97); box-shadow: none; }
   .card__photo {
     width: 56px;
@@ -94,39 +105,39 @@
   .card__title { font-weight: 600; font-size: 15px; }
   .card__subtitle {
     font-size: 13px;
-    color: var(--tg-theme-hint-color, #888888);
+    color: var(--tg-theme-hint-color, #8a7a5c);
     white-space: pre-line;
     margin-top: 2px;
   }
   .card__right {
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
-    color: var(--tg-theme-link-color, #2ea6ff);
+    color: var(--brand-gold);
   }
   .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
     padding: 10px 16px;
     border-radius: 999px;
-    border: none;
-    background: var(--tg-theme-secondary-bg-color, #f3f3f5);
-    color: var(--tg-theme-text-color, #111111);
+    border: 1px solid transparent;
+    background: var(--tg-theme-secondary-bg-color, #f1e6cf);
+    color: var(--tg-theme-text-color, #241a0f);
     font-size: 15px;
     cursor: pointer;
-    transition: transform var(--transition-fast);
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
   }
-  .chip:active { transform: scale(0.95); }
+  .chip:active { transform: scale(0.95); border-color: var(--brand-gold); }
   .text-input {
     width: 100%;
     padding: 12px 14px;
     border-radius: var(--radius-sm);
-    border: 1px solid var(--tg-theme-hint-color, #cccccc);
+    border: 1px solid var(--tg-theme-hint-color, #ddc9a3);
     background: var(--tg-theme-bg-color, #ffffff);
-    color: var(--tg-theme-text-color, #111111);
+    color: var(--tg-theme-text-color, #241a0f);
     font-size: 16px;
     margin-bottom: 12px;
     transition: border-color var(--transition-fast);
   }
-  .text-input:focus { outline: none; border-color: var(--tg-theme-button-color, #2ea6ff); }
+  .text-input:focus { outline: none; border-color: var(--brand-gold); }
   .primary-btn, .secondary-btn {
     display: block;
     width: 100%;
@@ -141,26 +152,27 @@
   }
   .primary-btn:active, .secondary-btn:active { transform: scale(0.98); opacity: 0.85; }
   .primary-btn {
-    background: var(--tg-theme-button-color, #2ea6ff);
-    color: var(--tg-theme-button-text-color, #ffffff);
-    box-shadow: 0 4px 12px rgba(46, 166, 255, 0.25);
+    background: linear-gradient(135deg, var(--brand-gold-bright), var(--brand-gold));
+    color: var(--brand-ink);
+    box-shadow: 0 4px 14px rgba(184, 134, 11, 0.35);
   }
   .secondary-btn {
-    background: var(--tg-theme-secondary-bg-color, #f3f3f5);
-    color: var(--tg-theme-text-color, #111111);
+    background: var(--tg-theme-secondary-bg-color, #f1e6cf);
+    color: var(--tg-theme-text-color, #241a0f);
+    border: 1px solid rgba(184, 134, 11, 0.3);
   }
   .summary-box {
-    background: var(--tg-theme-secondary-bg-color, #f3f3f5);
+    background: var(--tg-theme-secondary-bg-color, #f1e6cf);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
     padding: 4px 14px;
     margin-bottom: 16px;
   }
-  .summary-row { padding: 10px 0; border-bottom: 1px solid rgba(127, 127, 127, 0.15); }
+  .summary-row { padding: 10px 0; border-bottom: 1px solid rgba(184, 134, 11, 0.18); }
   .summary-row:last-child { border-bottom: none; }
   .summary-row__label {
     font-size: 12px;
-    color: var(--tg-theme-hint-color, #888888);
+    color: var(--brand-gold);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
