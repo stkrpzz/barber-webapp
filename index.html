@@ -825,7 +825,8 @@
       renderLoading("Загружаю твои записи…");
       var bookings;
       try {
-        bookings = await apiGet("/api/public/my-bookings?init_data=" + encodeURIComponent(getInitData()));
+        // POST, а не GET — initData не должна оседать в URL (см. api/router.py).
+        bookings = await apiPost("/api/public/my-bookings", { init_data: getInitData() });
       } catch (e) { renderError("Не удалось загрузить записи.", renderMyBookings); return; }
 
       var root = el("div");
