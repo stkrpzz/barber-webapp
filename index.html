@@ -449,6 +449,11 @@
 
     // ---------- шаг 1: услуга ----------
     async function renderServices() {
+      // Запись идёт через /api/public/book с tg.initData — вне Telegram
+      // подписи не будет, и без этой проверки человек проходил бы всю
+      // воронку (имя, телефон) и получал невнятную ошибку только на самом
+      // последнем шаге. Тот же гард уже стоит в "Мои записи" и "Отзывах".
+      if (!tg) { renderTelegramOnly(); return; }
       renderLoading("Загружаю услуги…", "service");
       var services;
       try { services = await apiGet("/api/public/services"); }
@@ -501,11 +506,13 @@
       root.appendChild(summaryLine());
       masters.forEach(function (m) {
         var ratingText = m.review_count ? ("⭐ " + m.rating + " (" + m.review_count + ")") : "Пока нет отзывов";
+        var subtitle = m.spec + "\n" + ratingText;
+        if (m.last_comment) subtitle += "\n💬 «" + m.last_comment + "»";
         root.appendChild(card({
           photo: "assets/masters/" + m.key + ".jpg",
           round: true,
           title: m.name,
-          subtitle: m.spec + "\n" + ratingText,
+          subtitle: subtitle,
           onClick: function () { state.master = m; goToStep("date"); }
         }));
       });
