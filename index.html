@@ -188,6 +188,64 @@
     to { opacity: 1; transform: translateY(0); }
   }
   .fade-in { animation: fadeIn 0.18s ease-out; }
+
+  /* ---------- иконки вместо эмодзи ----------
+     Системные эмодзи на разных платформах (Windows/Android/iOS) рисуются
+     по-разному и цветом спорят с фирменным золотом — вместо них везде
+     однотонные SVG-иконки в --brand-gold. */
+  .icon { display: inline-flex; flex-shrink: 0; }
+  .icon svg { width: 100%; height: 100%; display: block; }
+
+  .h1-row { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; }
+  .h1-row h1 { margin: 0; }
+  .h1-row > .icon { width: 22px; height: 22px; color: var(--brand-gold); }
+
+  .card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: rgba(184, 134, 11, 0.14);
+    color: var(--brand-gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .card__icon .icon { width: 22px; height: 22px; }
+
+  .icon-btn { display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .icon-btn .icon { width: 17px; height: 17px; }
+
+  .badge-check {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand-gold-bright), var(--brand-gold));
+    color: var(--brand-ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(184, 134, 11, 0.35);
+    margin-bottom: 6px;
+  }
+  .badge-check .icon { width: 28px; height: 28px; }
+
+  .star-picker { display: flex; gap: 10px; justify-content: center; margin: 28px 0; }
+  .star-picker__btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 1px solid rgba(184, 134, 11, 0.3);
+    background: var(--tg-theme-secondary-bg-color, #f1e6cf);
+    color: var(--brand-gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+  }
+  .star-picker__btn .icon { width: 22px; height: 22px; }
+  .star-picker__btn:active { transform: scale(0.9); }
 </style>
 </head>
 <body>
@@ -223,6 +281,48 @@
       app.innerHTML = "";
       node.classList.add("fade-in");
       app.appendChild(node);
+    }
+
+    // ---------- иконки (вместо эмодзи) ----------
+    var ICONS = {
+      logo: '<circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><path d="M7.6 7.5 20 18M7.6 16.5 20 6M10.5 12H9"/>',
+      calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/>',
+      pin: '<path d="M12 21s-7-7.2-7-12a7 7 0 0 1 14 0c0 4.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.4"/>',
+      user: '<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-4 3.2-6.5 7-6.5S19 16 19 20"/>',
+      users: '<circle cx="8.5" cy="8" r="3"/><path d="M2.8 20c0-3.4 2.6-5.6 5.7-5.6S14.2 16.6 14.2 20"/><circle cx="17" cy="9" r="2.3"/><path d="M15.6 14.3c2.5.5 4.2 2.5 4.2 5.7"/>',
+      clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7.2v5l3.3 1.9"/>',
+      phone: '<path d="M5 4.5c0-.6.4-1 1-1h2.4c.5 0 .9.4 1 .8l.7 2.7c.1.4 0 .8-.3 1.1L8.1 9.7c1 2.2 2.7 3.9 4.9 4.9l1.6-1.7c.3-.3.7-.4 1.1-.3l2.7.7c.4.1.8.5.8 1V16.6c0 .6-.4 1-1 1h-.9C10.5 17.6 6.4 13.5 6.4 6.7V4.5z" fill="currentColor" stroke="none"/>',
+      folder: '<path d="M3.5 7.2c0-1 .8-1.7 1.7-1.7h3.6l1.8 1.8h8.2c1 0 1.7.8 1.7 1.7v7.3c0 1-.8 1.7-1.7 1.7H5.2c-1 0-1.7-.8-1.7-1.7V7.2z"/>',
+      star: '<path d="M12 2.7l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 16.8l-5.6 2.9 1.1-6.3-4.6-4.4 6.3-.9z" fill="currentColor" stroke="none"/>',
+      check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+      quote: '<path d="M8.7 8.2c-2.2.7-3.3 2.3-3.3 4.8V17h4.8v-4.7H8c0-1.5.6-2.4 2.1-2.9zM17 8.2c-2.2.7-3.3 2.3-3.3 4.8V17h4.8v-4.7h-2.2c0-1.5.6-2.4 2.1-2.9z" fill="currentColor" stroke="none"/>'
+    };
+
+    function icon(name, extraCls) {
+      var wrap = el("span", "icon" + (extraCls ? " " + extraCls : ""));
+      var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("fill", "none");
+      svg.setAttribute("stroke", "currentColor");
+      svg.setAttribute("stroke-width", "1.8");
+      svg.setAttribute("stroke-linecap", "round");
+      svg.setAttribute("stroke-linejoin", "round");
+      svg.innerHTML = ICONS[name] || "";
+      wrap.appendChild(svg);
+      return wrap;
+    }
+
+    function heading(iconName, text) {
+      var wrap = el("div", "h1-row");
+      wrap.appendChild(icon(iconName));
+      wrap.appendChild(el("h1", null, text));
+      return wrap;
+    }
+
+    function checkBadge() {
+      var b = el("div", "badge-check");
+      b.appendChild(icon("check"));
+      return b;
     }
 
     // ---------- прогресс записи ----------
@@ -265,6 +365,10 @@
         img.alt = "";
         img.onerror = function () { img.style.display = "none"; };
         c.appendChild(img);
+      } else if (opts.icon) {
+        var iconBadge = el("div", "card__icon" + (opts.round ? " round" : ""));
+        iconBadge.appendChild(icon(opts.icon));
+        c.appendChild(iconBadge);
       }
       var body = el("div", "card__body");
       body.appendChild(el("div", "card__title", opts.title));
@@ -428,19 +532,22 @@
     // ---------- главное меню ----------
     function renderMenu() {
       var root = el("div");
-      root.appendChild(el("h1", null, "💈 Barber Studio"));
+      root.appendChild(heading("logo", "Barber Studio"));
       root.appendChild(card({
-        title: "📅 Записаться",
+        icon: "calendar",
+        title: "Записаться",
         subtitle: "Услуга, салон, мастер, дата и время",
         onClick: function () { goToStep("service"); }
       }));
       root.appendChild(card({
-        title: "🗂 Мои записи",
+        icon: "folder",
+        title: "Мои записи",
         subtitle: "Посмотреть или отменить запись",
         onClick: function () { goToStep("myBookings"); }
       }));
       root.appendChild(card({
-        title: "⭐ Оставить отзыв",
+        icon: "star",
+        title: "Оставить отзыв",
         subtitle: "Оценить мастера",
         onClick: function () { goToStep("reviewMaster"); }
       }));
@@ -460,7 +567,7 @@
       catch (e) { renderError("Не удалось загрузить услуги. Проверь, что API запущен.", renderServices, "service"); return; }
 
       var root = stepRoot("service");
-      root.appendChild(el("h1", null, "💈 Выберите услугу"));
+      root.appendChild(heading("logo", "Выберите услугу"));
       services.forEach(function (s) {
         root.appendChild(card({
           photo: "assets/services/" + s.key + ".jpg",
@@ -481,7 +588,7 @@
       catch (e) { renderError("Не удалось загрузить салоны.", renderSalons, "salon"); return; }
 
       var root = stepRoot("salon");
-      root.appendChild(el("h1", null, "📍 Выберите салон"));
+      root.appendChild(heading("pin", "Выберите салон"));
       root.appendChild(summaryLine());
       salons.forEach(function (s) {
         root.appendChild(card({
@@ -502,12 +609,12 @@
       } catch (e) { renderError("Не удалось загрузить мастеров.", renderMasters, "master"); return; }
 
       var root = stepRoot("master");
-      root.appendChild(el("h1", null, "✂️ Выберите мастера"));
+      root.appendChild(heading("user", "Выберите мастера"));
       root.appendChild(summaryLine());
       masters.forEach(function (m) {
-        var ratingText = m.review_count ? ("⭐ " + m.rating + " (" + m.review_count + ")") : "Пока нет отзывов";
+        var ratingText = m.review_count ? ("★ " + m.rating + " (" + m.review_count + ")") : "Пока нет отзывов";
         var subtitle = m.spec + "\n" + ratingText;
-        if (m.last_comment) subtitle += "\n💬 «" + m.last_comment + "»";
+        if (m.last_comment) subtitle += "\n«" + m.last_comment + "»";
         root.appendChild(card({
           photo: "assets/masters/" + m.key + ".jpg",
           round: true,
@@ -517,7 +624,8 @@
         }));
       });
       root.appendChild(card({
-        title: "🙌 Любой свободный",
+        icon: "users",
+        title: "Любой свободный",
         subtitle: "В салоне «" + state.salon.name + "»",
         onClick: function () {
           state.master = { key: "any", name: "Любой свободный (" + state.salon.name + ")" };
@@ -535,7 +643,7 @@
       catch (e) { renderError("Не удалось загрузить даты.", renderDates, "date"); return; }
 
       var root = stepRoot("date");
-      root.appendChild(el("h1", null, "📅 Выберите дату"));
+      root.appendChild(heading("calendar", "Выберите дату"));
       root.appendChild(summaryLine());
       var grid = el("div", "chip-grid");
       dates.forEach(function (d) {
@@ -559,7 +667,7 @@
       } catch (e) { renderError("Не удалось загрузить время.", renderTimes, "time"); return; }
 
       var root = stepRoot("time");
-      root.appendChild(el("h1", null, "⏰ Выберите время"));
+      root.appendChild(heading("clock", "Выберите время"));
       root.appendChild(summaryLine());
 
       if (!data.slots.length) {
@@ -579,7 +687,7 @@
     // ---------- шаг 6: имя ----------
     function renderName() {
       var root = stepRoot("name");
-      root.appendChild(el("h1", null, "👤 Как вас зовут?"));
+      root.appendChild(heading("user", "Как вас зовут?"));
       root.appendChild(summaryLine());
 
       var prefill = state.name;
@@ -609,7 +717,7 @@
     // ---------- шаг 7: телефон ----------
     function renderPhone() {
       var root = stepRoot("phone");
-      root.appendChild(el("h1", null, "📱 Номер телефона"));
+      root.appendChild(heading("phone", "Номер телефона"));
       root.appendChild(summaryLine());
 
       var input = el("input", "text-input");
@@ -622,7 +730,9 @@
       // старых клиентах или если пользователь откажет — тогда просто
       // печатает номер вручную в поле выше, это основной надёжный путь.
       if (tg && tg.requestContact) {
-        var contactBtn = el("button", "secondary-btn", "📱 Отправить контакт из Telegram");
+        var contactBtn = el("button", "secondary-btn icon-btn");
+        contactBtn.appendChild(icon("phone"));
+        contactBtn.appendChild(el("span", null, "Отправить контакт из Telegram"));
         contactBtn.addEventListener("click", function () {
           tg.requestContact(function (sent, response) {
             var phone = response && response.responseUnsafe && response.responseUnsafe.contact
@@ -649,7 +759,7 @@
     // ---------- шаг 8: подтверждение ----------
     function renderConfirm() {
       var root = stepRoot("confirm");
-      root.appendChild(el("h1", null, "✅ Проверьте запись"));
+      root.appendChild(heading("check", "Проверьте запись"));
 
       var summary = el("div", "summary-box");
       summary.appendChild(summaryRow("Услуга", state.service.name + " — " + state.service.price + "₽"));
@@ -662,7 +772,7 @@
 
       root.appendChild(el("p", "hint", "Нажми «Записаться» — запись сразу попадёт в CRM, и придёт подтверждение в чат."));
 
-      mountPrimaryAction(root, "✅ Записаться", submitBooking);
+      mountPrimaryAction(root, "Записаться", submitBooking);
       mount(root);
     }
 
@@ -690,7 +800,7 @@
 
     function renderDone() {
       var root = el("div", "center");
-      root.appendChild(el("p", null, "✅"));
+      root.appendChild(checkBadge());
       root.appendChild(el("h1", null, "Готово!"));
       var r = state.bookingResult || {};
       root.appendChild(el("p", "hint",
@@ -719,7 +829,7 @@
       } catch (e) { renderError("Не удалось загрузить записи.", renderMyBookings); return; }
 
       var root = el("div");
-      root.appendChild(el("h1", null, "🗂 Мои записи"));
+      root.appendChild(heading("folder", "Мои записи"));
 
       if (!bookings.length) {
         root.appendChild(el("p", "hint", "Активных записей пока нет."));
@@ -756,7 +866,7 @@
       catch (e) { renderError("Не удалось загрузить мастеров.", renderReviewMaster); return; }
 
       var root = el("div");
-      root.appendChild(el("h1", null, "⭐ Кого оцениваем?"));
+      root.appendChild(heading("star", "Кого оцениваем?"));
       masters.forEach(function (m) {
         root.appendChild(card({
           photo: "assets/masters/" + m.key + ".jpg",
@@ -772,24 +882,26 @@
     // ---------- отзыв: оценка ----------
     function renderReviewRating() {
       var root = el("div");
-      root.appendChild(el("h1", null, "Оцените мастера " + state.reviewMaster.name));
-      var grid = el("div", "chip-grid");
+      root.appendChild(heading("star", "Оцените мастера " + state.reviewMaster.name));
+      var picker = el("div", "star-picker");
       [1, 2, 3, 4, 5].forEach(function (n) {
-        var chip = el("button", "chip", "⭐".repeat(n));
-        chip.addEventListener("click", function () {
+        var btn = el("button", "star-picker__btn");
+        btn.appendChild(icon("star"));
+        btn.setAttribute("aria-label", n + " из 5");
+        btn.addEventListener("click", function () {
           state.reviewRating = n;
           goToStep("reviewComment");
         });
-        grid.appendChild(chip);
+        picker.appendChild(btn);
       });
-      root.appendChild(grid);
+      root.appendChild(picker);
       mount(root);
     }
 
     // ---------- отзыв: комментарий ----------
     function renderReviewComment() {
       var root = el("div");
-      root.appendChild(el("h1", null, "Комментарий (необязательно)"));
+      root.appendChild(heading("quote", "Комментарий (необязательно)"));
 
       var input = el("textarea", "text-input");
       input.rows = 3;
@@ -818,7 +930,8 @@
 
     function renderReviewDone() {
       var root = el("div", "center");
-      root.appendChild(el("p", null, "Спасибо за отзыв! 🙌"));
+      root.appendChild(checkBadge());
+      root.appendChild(el("p", null, "Спасибо за отзыв!"));
       var btn = el("button", "primary-btn", "В меню");
       btn.addEventListener("click", function () { resetToStep("menu"); });
       root.appendChild(btn);
